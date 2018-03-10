@@ -2,7 +2,8 @@ module.exports = function solveSudoku(matrix) {
 
     var solved=[];
     var suggest = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-    var i, j;
+    var i, j, h;
+    var steps = [];
 
     for(i = 0; i < 9; i++){
         solved[i] = [];
@@ -16,6 +17,24 @@ module.exports = function solveSudoku(matrix) {
     }
 
     solution(solved);
+    var isSolved = check(solved);
+    var isCorrect = correct(solved);
+    
+    while(!isSolved && !isCorrect){
+        h = 0; 
+        selection(solved, h, steps);
+        isSolved = check(solved);
+        isCorrect = correct(solved);
+    
+        while(isCorrect == 'stop'){
+            solved = steps.pop();
+            h = 1;
+            selection(solved, h, steps);
+            isSolved = check(solved);
+            isCorrect = correct(solved);
+        }
+    }
+
     return solved;
 }
 
@@ -24,6 +43,7 @@ function solution(solved){
     var changed=0;
     var arr = [];
     var f;
+    
 
     for (i = 0; i < 9; i++){
         arr = [];
@@ -80,12 +100,12 @@ function solution(solved){
     }
 
     var oi = 0;
-    var oj=0;
+    var oj = 0;
     var counter = 0;
 
-    cvadrats();
+    squares();
 
-    function cvadrats(){
+    function squares(){
  
         arr = [];
         for (i = oi; i < oi+3; i++){ 
@@ -117,15 +137,15 @@ function solution(solved){
             }
         }
   
-        counter+=1;
+        counter += 1;
         if(counter < 3){
-            oj+=3;
-            cvadrats();
+            oj += 3;
+            squares();
         } else if (counter == 3 && oi < 6){
             oj = 0;
             oi += 3;
             counter = 0;
-            cvadrats();
+            squares();
         }
     }
 
@@ -142,7 +162,7 @@ function solution(solved){
     }
 
     oi = 0;
-    oj=0;
+    oj = 0;
     counter = 0;
     var kol = 0;
 
@@ -191,9 +211,9 @@ function solution(solved){
             }
         }
 
-        counter+=1;
+        counter += 1;
         if(counter < 3){
-            oj+=3;
+            oj += 3;
             lastInSquare(solved);
         } else if(counter == 3 && oi < 6){
             oj = 0;
@@ -256,23 +276,25 @@ function solution(solved){
                 changed++;
             } else if(solved[i][j].length != undefined){
                 counter++;
+            } else if (solved[i][j].length == 0){
+                correct(solved);
             }
         }
     }
 
     if(!counter){
-        correct(solved);
+        return(solved);
     } else if(changed != 0){
         solution(solved);
     } else if(changed == 0){
-        check(solved);
+        return(solved);
     }
 }
 
 function check(solved){
 
     counter = 0;
-    var isSolved;
+    var isSolved = true;
     for (i = 0; i < 9; i++){
         for(j = 0; j < 9; j++){
             if(solved[i][j].length != undefined){
@@ -285,24 +307,14 @@ function check(solved){
         isSolved = false;
     }
 
-    if(!isSolved){
-        for (i = 0; i < 9; i++){
-            for(j = 0; j < 9; j++){
-                if (solved[i][j].length != undefined){
-                    solved[i][j] = solved[i][j][0];
-                    i=9;
-                    j=9;
-                }
-            }
-        }
-        solution(solved);
-    } 
+   return isSolved;
 }
 
 function correct(solved){
 
     var isCorrect = true;
     var ok = [];
+    var stop = 'stop';
     for (i = 0; i < 9; i++){
         ok = [1, 2, 3, 4, 5, 6, 7, 8, 9];
             for(j = 0; j < 9; j++){
@@ -312,6 +324,12 @@ function correct(solved){
             if(solved[i][j].length != undefined){
                 isCorrect = false;
             } 
+            if(solved[i][j] == undefined){                       
+                return stop;
+            }
+            if (solved[i][j].length == 0){             
+                return stop;
+            }
         }
         if (ok.length > 0){
             isCorrect = false;
@@ -330,8 +348,8 @@ function correct(solved){
         }
     }
 
-    oi=0;
-    oj=0;
+    oi = 0;
+    oj = 0;
     counter = 0;
     checkBlocks();
 
@@ -348,19 +366,34 @@ function correct(solved){
             isCorrect = false;
         }
        
-        counter+=1;
+        counter += 1;
         if(counter < 3){
-            oj+=3;
+            oj += 3;
             checkBlocks();
         } else if(counter == 3 && oi < 6){
             oj = 0;
-            oi+=3;
+            oi += 3;
             counter = 0;
             checkBlocks();
         }
     }
 
-    if(isCorrect){
-        return solved;
+  return isCorrect;
+}
+
+function selection(solved, h, steps){
+
+    for (i = 0; i < 9; i++){
+        for(j = 0; j < 9; j++){
+            if (solved[i][j].length == 2){
+                var array = solved[i][j];
+                if (h == 0){
+                    steps.push(JSON.parse(JSON.stringify(solved)));
+                }
+                solved[i][j] = array[h];
+                solution(solved); 
+            }
+        }
     }
+    return steps;
 }
